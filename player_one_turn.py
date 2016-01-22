@@ -1,7 +1,8 @@
 __author__ = 'stevenkerr'
 import card_classes
-import player_one_alg
-import player_two_alg
+# import learnedRandomStrategy as player_two_alg
+import learnedRandomStrategy as player_two_alg
+import randomStrategy as player_one_alg
 from random import shuffle
 
 class Player_info():
@@ -38,13 +39,20 @@ bank = card_classes.bank
 
 def take_turn(player, opponent, one_or_two):
     start_turn(player,bank,turn,opponent)
+    bankcp = dict(bank)
     turn.actions_available = return_action_cards(turn.player)
-    action_phase(one_or_two)
-    buy_phase(one_or_two)
+    starthand = [i.name for i in player.hand]
+    deck = [i.name for i in player.deck]
+    discard = [i.name for i in player.discard]
+    actions = action_phase(one_or_two)
+    buys = buy_phase(one_or_two)
     end_turn()
 
+    return {"hand": starthand, "actions": actions, "buys": buys, "bank": bankcp, "player": one_or_two, "deck": deck, "discard": discard}
 
 def action_phase(one_or_two):
+    actions = []
+
     while turn.actions_available != [] and turn.actions_remaining != 0:
         player_info = Player_info()
         update_player_info(turn,player_info)
@@ -53,12 +61,16 @@ def action_phase(one_or_two):
             break
         ate = ccd[ate_name]
         if one_or_two == 1:
+            #HACKABLE here, passed object not string
             strategy = player_one_alg.execute_action_strategy(player_info,ate)
         elif one_or_two == 2:
-            strategy = player_two_alg.execute_action_strategy(player_info,ate)
+            strategy = player_two_alg.execute_action_strategy(player_info,ate)    
         move_executed_actions(ate)
         ate.execute_action(turn,strategy)
+        actions.append({'action': ate_name, 'strat': strategy, 'hand': [i.name for i in turn.player.hand], 'deck': [i.name for i in turn.player.deck], 'discard': [i.name for i in turn.player.discard]})
         turn.actions_available = return_action_cards(turn.player)
+
+    return actions
 
 
 
@@ -77,6 +89,8 @@ def move_executed_actions(action):
 
 def buy_phase(one_or_two):
     play_treasures()
+    tres = turn.treasure
+    buys = []
     while turn.buys_remaining > 0:
         ctbn = get_card_to_buy(one_or_two)
         if ctbn == 'None':
@@ -86,6 +100,9 @@ def buy_phase(one_or_two):
             turn.player.gain_card(ctb,turn.treasure)
             turn.buys_remaining -= 1
             turn.treasure -= ctb.cost
+            buys.append(ctbn)
+
+    return {"tres": tres, "buys": buys}
 
 
 def get_card_to_buy(one_or_two):
