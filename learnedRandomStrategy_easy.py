@@ -98,24 +98,7 @@ def getCardByValues(player_info, amount, Nones):
 		numbers.append(sum([a*b for a,b in zip(vec_dict[key],info)]))
 		names.append(key)
 
-	adjusted = numbers
-	adjusted = []
-	for n in numbers:
-		if n < 0:
-			adjusted.append(0)
-		else:
-			adjusted.append(n)
-
-	r = random.random() * sum(adjusted)
-
-	for i in range(0, len(names)):
-		if adjusted[i] > r:
-			return names[i]
-		else:
-			r-=adjusted[i]
-
-	print "-----------------Oops"
-	return "None"
+	return names[numbers.index(max(numbers))]
 
 def buy_choice(player_info):
 	return getCardByValues(player_info, player_info.treasure, True)
