@@ -283,9 +283,9 @@ kingdom_cards = ['Village','Chapel','Workshop','Smithy','Money Lender', 'Remodel
 standard_supply = ['Copper', 'Silver', 'Gold', 'Estate', 'Duchy', 'Province']
 all_cards_in_play_list = kingdom_cards + standard_supply
 name_to_inst_dict = {'Copper':Copper(), 'Duchy':Duchy(), 'Estate':Estate(), 'Gold':Gold(), 'Silver':Silver(),
-					 'Province':Province(), 'Laboratory' :Laboratory(),'Market':Market(), 'Smithy':Smithy(),
-					 'Village': Village(),'Money Lender': Moneylender(), 'Woodcutter': Woodcutter(),
-					 'Festival': Festival(), 'Remodel':Remodel(), 'Workshop': Workshop(), 'Feast' : Feast(),
+					 'Province':Province(), 'Laboratory':Laboratory(),'Market':Market(), 'Smithy':Smithy(),
+					 'Village':Village(),'Money Lender':Moneylender(), 'Woodcutter': Woodcutter(),
+					 'Festival':Festival(), 'Remodel':Remodel(), 'Workshop':Workshop(), 'Feast':Feast(),
 					 'Chapel' : Chapel()}
-bank = {'Copper': 40, 'Estate': 8, 'Silver': 40, 'Duchy' : 8, 'Gold' : 25, 'Province' : 8, 'Money Lender' :10}
-trash = {'Copper': 0, 'Estate': 0, 'Silver': 0, 'Village': 0, 'Smithy' :0, 'Duchy' : 0, 'Gold' : 0, 'Province' : 0}
+bank = {'Copper':40, 'Estate':8, 'Silver':40, 'Duchy':8, 'Gold':25, 'Province':8, 'Money Lender':10}
+trash = {'Copper':0, 'Estate':0, 'Silver':0, 'Village':0, 'Smithy':0, 'Duchy':0, 'Gold':0, 'Province':0}

@@ -147,23 +147,25 @@ class Game_result():
 		return winner_list
 
 def play_game(player_one, player_two):
-	player_one_turns = 0
-	player_two_turns = 0
+	player_one.turn = 0
+	player_two.turn = 0
+
 	turnData = []
+
+	# if player_one.turn == 0 :
+	player_one.shuffle_discards()
+	player_two.shuffle_discards()
+	player_one.draw_cards(5)
+	player_two.draw_cards(5)
+
 	while check_game_not_over():
-		if player_one_turns == 0 :
-			player_one.shuffle_discards()
-			player_two.shuffle_discards()
-			player_one.draw_cards(5)
-			player_two.draw_cards(5)
 		turnData.append(take_turn(player_one,player_two,1))
-		player_one_turns += 1
 		if check_game_not_over():
 			turnData.append(take_turn(player_two,player_one,2))
-			player_two_turns += 1
+
 	game_result = Game_result()
-	game_result.player_one_turns = player_one_turns
-	game_result.player_two_turns = player_two_turns
+	game_result.player_one_turns = player_one.turn
+	game_result.player_two_turns = player_two.turn
 	game_result.player_one_points = player_one.victory_count()
 	game_result.player_two_points = player_two.victory_count()
 
@@ -174,12 +176,7 @@ def play_game(player_one, player_two):
 
 
 def check_game_not_over():
-	if bank['Province'] > 0 and check_three_pile_finish() < 3:
-		not_over = True
-	else:
-		not_over = False
-	return not_over
-
+	return bank['Province'] > 0 and check_three_pile_finish() < 3
 
 def check_three_pile_finish():
 	count = 0

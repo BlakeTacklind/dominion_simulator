@@ -1,9 +1,10 @@
 __author__ = 'stevenkerr'
 import card_classes
 # import learnedRandomStrategy as player_two_alg
-import learnedRandomStrategy as player_two_alg
-import randomStrategy as player_one_alg
+import learnedRandomStrategy2 as player_two_alg
+import player_one_alg
 from random import shuffle
+import pandas as pd
 
 class Player_info():
     def __init__(self):
@@ -140,6 +141,8 @@ def start_turn(player,bank,turn, opponent):
     turn.bank = bank
     turn.buys_remaining = 1
     turn.treasure = 0
+    turn.number = player.turn
+    player.turn += 1
 
 def update_player_info(turn, player_info):
     player_info.bank = turn.bank
@@ -154,6 +157,7 @@ def update_player_info(turn, player_info):
     player_info.actions_available = turn.actions_available
     player_info.buys = turn.buys_remaining
     player_info.treasure = turn.treasure
+    player_info.turn = turn.number
     return player_info
 
 def end_turn():
