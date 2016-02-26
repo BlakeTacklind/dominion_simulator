@@ -1,9 +1,9 @@
 from __future__ import division
 from B_card_classes import *
 import random
-from sklearn import svm, linear_model
+# from sklearn import svm, linear_model
 from sklearn.externals import joblib
-import pandas as pd
+import numpy as np
 
 classifier = joblib.load('model.pkl')
 percentDone = joblib.load('ridge.pkl')
@@ -68,7 +68,7 @@ def getDeckData(player_info):
 
 def getPercentDone(bank):
 	curPiles = [bank['Chapel'],bank['Copper'],bank['Duchy'],bank['Estate'],bank['Feast'],bank['Festival'],bank['Gold'],bank['Laboratory'],bank['Market'],bank['Money Lender'],bank['Province'],bank['Remodel'],bank['Silver'],bank['Smithy'],bank['Village'],bank['Workshop']]
-	return percentDone.predict(pd.Series(curPiles).reshape(1, -1))
+	return percentDone.predict(np.array(curPiles).reshape(1, -1))
 	# return sum([a*b for a,b in zip(olsPercentDone,curPiles)])
 
 def getPossibleList(bank, treasure):
@@ -97,7 +97,7 @@ def getCardByValues(player_info, amount, Nones):
 
 
 
-	res = classifier.predict(pd.Series(info).reshape(1, -1))
+	res = classifier.predict(np.array(info).reshape(1, -1))
 
 	if res == 0:
 		return "None"
