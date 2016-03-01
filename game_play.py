@@ -238,5 +238,5 @@ def play_game_two(num):
 	closeFiles()
 
 #How to run a game
-play_game_two(100)
+# play_game_two(10000)
 # play_game_two(1000)
