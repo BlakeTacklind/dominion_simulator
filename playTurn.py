@@ -18,6 +18,20 @@ for i in range(len(allCardInst)):
 # for i in allCardInst:
 # 	print i.name, i.key
 
+
+copper = B_card_classes.name_to_inst_dict['Copper']
+estate = B_card_classes.name_to_inst_dict['Estate']
+duchy = B_card_classes.name_to_inst_dict['Duchy']
+monLen = B_card_classes.name_to_inst_dict['Money Lender']
+chapel = B_card_classes.name_to_inst_dict['Chapel']
+remodel = B_card_classes.name_to_inst_dict['Remodel']
+workshop = B_card_classes.name_to_inst_dict['Workshop']
+feast = B_card_classes.name_to_inst_dict['Feast']
+
+actionData = pd.DataFrame()
+buyData = pd.DataFrame()
+stagedDecks = dict()
+
 def return_action_cards(hand):
 	action_list = []
 	for card in hand:
@@ -31,10 +45,10 @@ def printArray(arr):
 		print card.name
 
 def listToString(arr):
-	return reduce(lambda x, y: x + ' ' + y.name, arr, "")
+	return reduce(lambda x, y: x + ' ' + y.name, arr, "")[1:]
 
 def listToStortString(arr):
-	return reduce(lambda x, y: x + ' ' + str(y.key), arr, "")
+	return reduce(lambda x, y: x + ' ' + str(y.key), arr, "")[1:]
 
 def ActionsToBuys(row):
 	return {'buys':row['buys'], 'treasure':row['treasure'], 'ohand':row['startHand'], 'hand':row['EndHand']}
@@ -79,7 +93,6 @@ def playoutActions(Ohand, Odeck, rep=10):
 		rep *= 4
 
 	data = []
-	# actionData = pd.DataFrame()
 
 	for i in range(rep):
 		deck = list(Odeck)
@@ -105,7 +118,6 @@ def playoutActions(Ohand, Odeck, rep=10):
 			if choose is None:
 				another = False
 			else:
-				actionsTaken.append(choose.name)
 				actions -= 1
 
 				hand.remove(choose)
@@ -115,33 +127,46 @@ def playoutActions(Ohand, Odeck, rep=10):
 					hand.remove(copper)
 					treasure+=3
 					trash = trash + [copper]
+					actionsTaken.append((choose,[copper]))
 					
-				if choose.name is "Remodel":
+				elif choose is remodel:
 					remod = choice(hand)
 					aquire.append(remod.cost+2)
-					actionsTaken.append("R - " + remod.name)
+					# actionsTaken.append("R - " + remod.name)
 					trash = trash + [remod]
 					hand.remove(remod)
+					actionsTaken.append((choose,[remod]))
 
-				if choose.name is "Workshop":
+				elif choose.name is workshop:
 					aquire.append(4)
+					actionsTaken.append((choose,None))
 
-				if choose.name is "Feast":
+				elif choose is feast:
 					aquire.append(5)
 					discard.remove(choose)
 					trash = trash + [choose]
+					actionsTaken.append((choose,None))
 
-				if choose.name is "Chapel":
+				elif choose is chapel:
 					r = choice([1,2,3,4])
 					
 					if r > len(hand):
 						r = len(hand)
 					
+					actionsTaken.append((choose,[]))
+
 					for i in range(r):
 						c = choice(hand)
-						actionsTaken.append("C - " + c.name)
+						a,b = actionsTaken[len(actionsTaken)-1]
+						b.append(c)
 						trash = trash + [c]
 						hand.remove(c)
+
+
+
+				else:
+					actionsTaken.append((choose,None))
+
 
 				treasure += choose.gain_treasure
 				actions += choose.gain_actions
@@ -172,8 +197,11 @@ def playoutActions(Ohand, Odeck, rep=10):
 	# print data
 	return data
 
+def stringifyTaken(taken):
+	return reduce(lambda x, (a,b): x+' '+a.name+('' if b is None else '(' + listToString(b) + ')'), taken, '')
+
 def stringifyActions(row):
-	return {'taken':row['taken'], 'treasure':row['treasure'], 'buys':row['buys'], 'aquire':row['aquire'], 'actions':row['actions'], 'startHand':listToString(row['startHand']), 'EndHand':listToString(row['EndHand']), 'discarded':listToString(row['discarded']), 'trash':listToString(row['trash']), 'deck':listToString(row['deck'])}
+	return {'taken':stringifyTaken(row['taken']), 'treasure':row['treasure'], 'buys':row['buys'], 'aquire':row['aquire'], 'actions':row['actions'], 'startHand':listToString(row['startHand']), 'EndHand':listToString(row['EndHand']), 'discarded':listToString(row['discarded']), 'trash':listToString(row['trash']), 'deck':listToString(row['deck'])}
 
 def playoutTurn(Odeck, rep=10):
 
@@ -248,21 +276,10 @@ def playoutTurn(Odeck, rep=10):
 
 # print allCardInst
 
-
-copper = B_card_classes.name_to_inst_dict['Copper']
-estate = B_card_classes.name_to_inst_dict['Estate']
-duchy = B_card_classes.name_to_inst_dict['Duchy']
-monLen = B_card_classes.name_to_inst_dict['Money Lender']
-chapel = B_card_classes.name_to_inst_dict['Chapel']
-remodel = B_card_classes.name_to_inst_dict['Remodel']
-
-actionData = pd.DataFrame()
-buyData = pd.DataFrame()
 # initialHand = [chapel]
 initialHand = [copper,copper,copper,copper,copper,copper,copper,estate,estate,estate]
 
 allDecks = dict({listToStortString(initialHand):{'done':True, 'origin':[], 'deck':initialHand}})
-stagedDecks = dict()
 
 # bdT, adT = playoutTurn(initialHand)
 # actionData = actionData.append(adT, ignore_index=True)
@@ -272,7 +289,7 @@ stagedDecks = dict()
 # 	print listToString(allDecks[key]['deck'])
 # print possibleBuys(7, 2, 5)
 
-for initBuys in possibleBuys(0, 2, 5):
+for initBuys in possibleBuys(7, 2, 5):
 	if copper not in initBuys and estate not in initBuys and duchy not in initBuys and initBuys:
 		# print initBuys
 		rundeck = sorted(initialHand + initBuys, key=lambda x: x.key)
@@ -282,22 +299,22 @@ for initBuys in possibleBuys(0, 2, 5):
 		buyData = buyData.append(bdT, ignore_index=True)
 
 
-for i in range(0):
+# for i in range(0):
 
-	for key in allDecks:
-		if not allDecks[key]['done']:
-			bdT, adT = playoutTurn(allDecks[key]['deck'])
-			actionData = actionData.append(adT, ignore_index=True)
-			buyData = buyData.append(bdT, ignore_index=True)
+# 	for key in allDecks:
+# 		if not allDecks[key]['done']:
+# 			bdT, adT = playoutTurn(allDecks[key]['deck'])
+# 			actionData = actionData.append(adT, ignore_index=True)
+# 			buyData = buyData.append(bdT, ignore_index=True)
 
-	for key in stagedDecks:
-		allDecks[key] = stagedDecks[key]
+# 	for key in stagedDecks:
+# 		allDecks[key] = stagedDecks[key]
 
-	stagedDecks = dict()
+# 	stagedDecks = dict()
 
-# actionData.to_csv('actionsData.csv')
-# buyData.to_csv('buysData.csv')
-print buyData
+actionData.to_csv('actionsData.csv')
+buyData.to_csv('buysData.csv')
+# print buyData
 print actionData
 
 # playoutTurn([copper,copper,copper,copper,copper,copper,copper,estate,estate,estate,smithy,lab])
