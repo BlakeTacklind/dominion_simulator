@@ -20,7 +20,7 @@ workshop = B_card_classes.name_to_inst_dict['Workshop']
 feast = B_card_classes.name_to_inst_dict['Feast']
 
 
-# actionData = pd.DataFrame(columns=['taken', 'treasure', 'buys', 'aquire', 'actions', 'startHand', 'EndHand'])
+# actionData = pd.DataFrame(columns=['taken', 'treasure', 'buys', 'acquire', 'actions', 'startHand', 'EndHand'])
 
 
 
@@ -45,10 +45,6 @@ def return_action_cards(hand):
 				action_list.append(card)
 	return action_list
 
-def printArray(arr):
-	for card in arr:
-		print card.name
-
 def listToString(arr):
 	return reduce(lambda x, y: x + ' ' + y.name, arr, "")[1:]
 
@@ -58,7 +54,6 @@ def listToStortString(arr):
 def ActionsToBuys(row):
 	return {'buys':row['buys'], 'treasure':row['treasure'], 'ohand':row['startHand'], 'hand':row['EndHand']}
 
-used = 0
 
 def possibleBuysGen(treasure,buys=1,cap=8,keyCap=100):
 	if buys == 0:
@@ -70,14 +65,16 @@ def possibleBuysGen(treasure,buys=1,cap=8,keyCap=100):
 	if buys == 1:
 		return [[]]+ [[i] for i in (buysList)]
 
-	moreBuys = [possibleBuysGen(treasure-i.cost, buys-1, i.cost, i.key) for i in buysList]
+	moreBuys = (possibleBuysGen(treasure-i.cost, buys-1, i.cost, i.key) for i in buysList)
 
 	# print moreBuys
 	# print len(buysList)
 	out = []
 
-	for i in range(len(buysList)):
-		out = out + [[buysList[i]] + j for j in moreBuys[i]]
+	i = 0
+	for ele in moreBuys:
+		out = out + [[buysList[i]] + j for j in ele]
+		i+=1
 
 	return [[]] + out
 
@@ -85,40 +82,70 @@ limitMon = 17
 limitBuys = 4
 
 pBuysList = list()
-for i in range(limitMon):
-	pBuysList.append(list(range(limitBuys)))
-	for j in range(limitBuys):
-		pBuysList[i][j] = possibleBuysGen(i,j)
+for i in range(limitBuys):
+	pBuysList.append(list(range(limitMon)))
+	for j in range(limitMon):
+		pBuysList[i][j] = possibleBuysGen(j,i)
 
+used = 0
 def possibleBuys(treasure,buys=1):
 	if treasure < limitMon and buys < limitBuys:
 		global pBuysList
-		return pBuysList[treasure][buys]
+		return pBuysList[buys][treasure]
 
 	global used
 	used += 1
 
 	return possibleBuysGen(treasure, buys)
 
-def getPossibleAquires(value):
-	return reduce(lambda x,y: x+[y] if y.cost <= value else x, allCardsConsidered2, [])
+def getPossibleAcquires(value):
+	return reduce(lambda x,y: [y]+x if y.cost <= value else x, allCardsConsidered2, [])
 
-# a = itertools.product(*map(getPossibleAquires, [2,2]))
+def getPossibleAcquires2(arr):
+	arr = sorted(arr, reverse=True)
+	gen = itertools.product(*map(getPossibleAcquires, arr))
+
+	for i in gen:
+		keyCap = 100
+		good = True
+		for j in i:
+			if j.key > keyCap:
+				good = False
+				break
+			else:
+				keyCap = j.key
+
+		if good:
+			yield list(i)
+
+
+	# print arr
+
+
+
+# for i in getPossibleAcquires2([2,4]):
+# 	print i
+
+# print 
+
+# a = getPossibleAcquires2([2])
+# print a
 # for i in a:
 # 	print i
 
 # print
-# b = possibleBuys(2)
+# b = possibleBuys(4, 2)
 
 # for i in b:
 # 	print i
 
 # print
 
-# c = map(lambda (x,y): x+y,itertools.product(a,b))
+# c = map(lambda (x,y): x+y,itertools.product(getPossibleAcquires2([2]),b))
+# print c
 # for i in c:
-# 	print i
-# c = map(lambda (x,y): x+y,itertools.product(map(list, itertools.product(map(getPossibleAquires, [2]))), possibleBuys(4,2)))
+# 	print listToString(i)
+# c = map(lambda (x,y): x+y,itertools.product(map(list, itertools.product(map(getPossibleAcquires, [2]))), possibleBuys(4,2)))
 # print c
 # for i in c:
 # 	print i
@@ -150,7 +177,7 @@ def playoutActions(Ohand, Odeck, rep=10):
 		actions = 1
 		treasure = 0
 		buys = 1
-		aquire = []
+		acquire = []
 		discard = []
 		trash = []
 
@@ -174,18 +201,18 @@ def playoutActions(Ohand, Odeck, rep=10):
 					
 				elif choose is remodel:
 					remod = choice(hand)
-					aquire.append(remod.cost+2)
+					acquire.append(remod.cost+2)
 					# actionsTaken.append("R - " + remod.name)
 					trash = trash + [remod]
 					hand.remove(remod)
 					actionsTaken.append((choose,[remod]))
 
 				elif choose.name is workshop:
-					aquire.append(4)
+					acquire.append(4)
 					actionsTaken.append((choose,None))
 
 				elif choose is feast:
-					aquire.append(5)
+					acquire.append(5)
 					discard.remove(choose)
 					trash = trash + [choose]
 					actionsTaken.append((choose,None))
@@ -228,23 +255,18 @@ def playoutActions(Ohand, Odeck, rep=10):
 				action_list = return_action_cards(hand)
 			# End Else
 		# End While
-		# print "end of action "+str(treasure)+","+str(buys)+","+str(actions)+","+str(aquire)+","+str(len(hand))+","+str(actionsTaken)
-		# printArray(hand)
 
 
 		inHandTreasure = reduce(lambda x, y: x+y.treasure, hand, treasure)
-		data.append({'taken':actionsTaken, 'treasure':inHandTreasure, 'buys':buys, 'aquire':aquire, 'actions':actions, 'startHand':Ohand, 'EndHand':hand, 'discarded':discard, 'trash':trash, 'deck':deck})
-		# print data
-		# actionData.append(data, ignore_index=True)
+		data.append({'taken':actionsTaken, 'treasure':inHandTreasure, 'buys':buys, 'acquire':acquire, 'actions':actions, 'startHand':Ohand, 'EndHand':hand, 'discarded':discard, 'trash':trash, 'deck':deck})
 
-	# print data
 	return data
 
 def stringifyTaken(taken):
 	return reduce(lambda x, (a,b): x+' '+a.name+('' if b is None else '(' + listToString(b) + ')'), taken, '')
 
 def stringifyActions(row):
-	return {'taken':stringifyTaken(row['taken']), 'treasure':row['treasure'], 'buys':row['buys'], 'aquire':row['aquire'], 'actions':row['actions'], 'startHand':listToString(row['startHand']), 'EndHand':listToString(row['EndHand']), 'discarded':listToString(row['discarded']), 'trash':listToString(row['trash']), 'deck':listToString(row['deck'])}
+	return {'taken':stringifyTaken(row['taken']), 'treasure':row['treasure'], 'buys':row['buys'], 'acquire':row['acquire'], 'actions':row['actions'], 'startHand':listToString(row['startHand']), 'EndHand':listToString(row['EndHand']), 'discarded':listToString(row['discarded']), 'trash':listToString(row['trash']), 'deck':listToString(row['deck'])}
 
 def playoutTurn(Odeck, rep=10):
 
@@ -253,8 +275,10 @@ def playoutTurn(Odeck, rep=10):
 
 	allDecks[listToStortString(Odeck)]['done'] = True
 
-	actionDataTurn = pd.DataFrame()
-	buyDataTurn = pd.DataFrame()
+	global actionColumns
+	global buyColumns
+	actionDataTurn = pd.DataFrame(columns=actionColumns)
+	buyDataTurn = pd.DataFrame(columns=buyColumns)
 
 	for i in range(rep):
 		deck = list(Odeck)
@@ -271,10 +295,10 @@ def playoutTurn(Odeck, rep=10):
 		#action phase
 		newData = playoutActions(hand, deck)
 
+		#buy phase
 		if newData:
 			actstr = map(stringifyActions, newData)
 			actionDataTurn = actionDataTurn.append(actstr, ignore_index=True)
-		#buy phase
 
 			Bdata = map(ActionsToBuys, actstr)
 
@@ -287,19 +311,21 @@ def playoutTurn(Odeck, rep=10):
 
 				#Generates buys and gains list (possible copies created)
 				#could use more generators
-				buysAndGains = map(lambda (x,y): x+y,itertools.product(*([map(list, itertools.product(*map(getPossibleAquires, i['aquire'])))]+[buys])))
+				# buysAndGains = map(lambda (x,y): x+y,itertools.product(*([map(list, itertools.product(*map(getPossibleAcquires, i['acquire'])))]+[buys])))
+
+				buysAndGains = map(lambda (x,y): x+y,itertools.product(getPossibleAcquires2(i['acquire']),buys))
 
 				for k in (sorted(j+i['deck']+i['EndHand']+i['discarded'], key=lambda c: c.key) for j in buysAndGains):
 					key = listToStortString(k)
 
 					if key not in allDecks:
-						if key in stagedDecks:
-							stagedDecks[key]['origin'].append(Odeck)
-						else:
-							stagedDecks[key]={'done':False, 'origin':[Odeck], 'deck':k}
+						if key not in stagedDecks:
+						# 	stagedDecks[key]['origin'].append(Odeck)
+						# else:
+							stagedDecks[key]={'done':False, 'deck':k}
 							# print key
-					else:
-						allDecks[key]['origin'].append(Odeck)
+					# else:
+					# 	allDecks[key]['origin'].append(Odeck)
 			# print nextTurnDecks
 			# print set(nextTurnDecks)
 
@@ -309,40 +335,46 @@ def playoutTurn(Odeck, rep=10):
 			for k in [sorted(deck + i, key= lambda c: c.key) for i in possibleBuys(Bdata[0]['treasure'])]:
 				key = listToStortString(k)
 				if key not in allDecks:
-					if key in stagedDecks:
-						stagedDecks[key]['origin'].append(Odeck)
-					else:
-						stagedDecks[key]={'done':False, 'origin':[Odeck], 'deck':k}
-				else:
-					allDecks[key]['origin'].append(Odeck)
+					if key not in stagedDecks:
+					# 	stagedDecks[key]['origin'].append(Odeck)
+					# else:
+						stagedDecks[key]={'done':False, 'deck':k}
+				# else:
+				# 	allDecks[key]['origin'].append(Odeck)
 
 			# print nextTurnDecks
 
 		buyDataTurn = buyDataTurn.append(Bdata, ignore_index=True)
 
-
-
 	# print actionDataTurn
 	# print buyDataTurn
-	with open('buyData.csv', 'a') as f:
-		buyDataTurn.to_csv(f, header=False)
+	with open('buysData.csv', 'a') as f:
+		buyDataTurn.to_csv(f, header=False, index=False)
 
 	with open('actionsData.csv', 'a') as f:
-		actionDataTurn.to_csv(f, header=False)
+		actionDataTurn.to_csv(f, header=False, index=False)
 
 	del buyDataTurn
 	del actionDataTurn
 	# return buyDataTurn, actionDataTurn
 
 
-# print allCardInst
+# exit()
 
-# initialHand = [chapel]
-initialHand = [copper,copper,copper,copper,copper,copper,copper,estate,estate,estate]
+actionColumns = ['taken', 'treasure', 'buys', 'acquire', 'actions', 'startHand', 'EndHand', 'discarded', 'trash', 'deck']
+buyColumns = ['buys', 'treasure', 'ohand', 'hand']
 
-allDecks = dict({listToStortString(initialHand):{'done':True, 'origin':[], 'deck':initialHand}})
+holder = pd.DataFrame(columns=actionColumns)
 
+with open('actionsData.csv', 'w') as f:
+	holder.to_csv(f, index=False)
 
+holder = pd.DataFrame(columns=buyColumns)
+
+with open('buysData.csv', 'w') as f:
+	holder.to_csv(f, index=False)
+
+del holder
 
 # stagedDecks = dict()
 # bdT, adT = playoutTurn(initialHand)
@@ -354,14 +386,17 @@ allDecks = dict({listToStortString(initialHand):{'done':True, 'origin':[], 'deck
 # 	print listToString(allDecks[key]['deck'])
 # print possibleBuys(7, 2, 5)
 
-# exit()
+initialHand = [copper,copper,copper,copper,copper,copper,copper,estate,estate,estate]
+
+allDecks = dict({listToStortString(initialHand):{'done':True, 'deck':initialHand}})
+
 
 print 'turn ', str(3)
 for initBuys in possibleBuysGen(7, 2, 5):
 	if copper not in initBuys and estate not in initBuys and duchy not in initBuys and initBuys:
 		# print initBuys
 		rundeck = sorted(initialHand + initBuys, key=lambda x: x.key)
-		allDecks[listToStortString(rundeck)] = {'done':False, 'origin':[initialHand], 'deck':rundeck}
+		allDecks[listToStortString(rundeck)] = {'done':False, 'deck':rundeck}
 		playoutTurn(rundeck)
 		# actionData = actionData.append(adT, ignore_index=True)
 		# buyData = buyData.append(bdT, ignore_index=True)
@@ -371,7 +406,9 @@ for key in stagedDecks:
 print 'number of decks created:', len(stagedDecks)
 
 
-for i in range(0):
+numberMoreTurns = 0
+
+for i in range(numberMoreTurns):
 	print 'turn', str(i+4)
 	stagedDecks = dict()
 
