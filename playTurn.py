@@ -3,8 +3,11 @@ import player_one_turn
 from random import shuffle
 from random import choice
 
+import itertools
+
 import numpy as np
 import pandas as pd
+
 
 
 # actionData = pd.DataFrame(columns=['taken', 'treasure', 'buys', 'aquire', 'actions', 'startHand', 'EndHand'])
@@ -73,12 +76,18 @@ def possibleBuys(treasure,buys=1,cap=8,keyCap=100):
 
 	return [[]] + out
 
-# import time
-# start_time = time.time()
-# # for i in range(1000):
-# for i in possibleBuys(7, 2, 5):
+def getPossibleAquires(value):
+	return reduce(lambda x,y: x+[y] if y.cost <= value else x, allCardInst, [])
+
+# a = map(list, itertools.product(*map(getPossibleAquires, [])))
+# b = possibleBuys(2)
+
+# c = map(lambda (x,y): x+y,itertools.product(*([a]+[b])))
+# for i in c:
 # 	print i
-# print str(time.time() - start_time)
+# c = map(lambda (x,y): x+y,itertools.product(*([map(list, itertools.product(*map(getPossibleAquires, [2])))]+[possibleBuys(4,2)])))
+# for i in c:
+# 	print listToString(i)
 
 def playoutActions(Ohand, Odeck, rep=10):
 
@@ -236,9 +245,19 @@ def playoutTurn(Odeck, rep=10):
 			Bdata = map(ActionsToBuys, actstr)
 
 			nextTurnDecks = []
+
+
 			for i in newData:
-				for k in [sorted(j+i['deck']+i['EndHand']+i['discarded'], key=lambda c: c.key) for j in possibleBuys(i['treasure'], i['buys'])]:
+
+				buys = possibleBuys(i['treasure'], i['buys'])
+
+				#Generates buys and gains list (possible copies created)
+				#could use more generators
+				buysAndGains = map(lambda (x,y): x+y,itertools.product(*([map(list, itertools.product(*map(getPossibleAquires, i['aquire'])))]+[buys])))
+
+				for k in [sorted(j+i['deck']+i['EndHand']+i['discarded'], key=lambda c: c.key) for j in buysAndGains]:
 					key = listToStortString(k)
+
 					if key not in allDecks:
 						if key in stagedDecks:
 							stagedDecks[key]['origin'].append(Odeck)
@@ -281,14 +300,19 @@ initialHand = [copper,copper,copper,copper,copper,copper,copper,estate,estate,es
 
 allDecks = dict({listToStortString(initialHand):{'done':True, 'origin':[], 'deck':initialHand}})
 
+# stagedDecks = dict()
 # bdT, adT = playoutTurn(initialHand)
 # actionData = actionData.append(adT, ignore_index=True)
 # buyData = buyData.append(bdT, ignore_index=True)
 
+# print stagedDecks
 # for key in allDecks:
 # 	print listToString(allDecks[key]['deck'])
 # print possibleBuys(7, 2, 5)
 
+
+
+print 'turn ', str(3)
 for initBuys in possibleBuys(7, 2, 5):
 	if copper not in initBuys and estate not in initBuys and duchy not in initBuys and initBuys:
 		# print initBuys
@@ -298,24 +322,35 @@ for initBuys in possibleBuys(7, 2, 5):
 		actionData = actionData.append(adT, ignore_index=True)
 		buyData = buyData.append(bdT, ignore_index=True)
 
+for key in stagedDecks:
+	allDecks[key] = stagedDecks[key]
+print 'number of decks created:', len(stagedDecks)
 
-# for i in range(0):
 
-# 	for key in allDecks:
-# 		if not allDecks[key]['done']:
-# 			bdT, adT = playoutTurn(allDecks[key]['deck'])
-# 			actionData = actionData.append(adT, ignore_index=True)
-# 			buyData = buyData.append(bdT, ignore_index=True)
+for i in range(1):
+	print 'turn', str(i+4)
+	stagedDecks = dict()
 
-# 	for key in stagedDecks:
-# 		allDecks[key] = stagedDecks[key]
+	for key in allDecks:
+		if not allDecks[key]['done']:
+			bdT, adT = playoutTurn(allDecks[key]['deck'])
+			actionData = actionData.append(adT, ignore_index=True)
+			buyData = buyData.append(bdT, ignore_index=True)
 
-# 	stagedDecks = dict()
+	for key in stagedDecks:
+		allDecks[key] = stagedDecks[key]
+	print 'number of decks created:', len(stagedDecks)
 
-actionData.to_csv('actionsData.csv')
-buyData.to_csv('buysData.csv')
+	actionData.to_csv('actionsData.csv')
+	buyData.to_csv('buysData.csv')
+
+# for key in allDecks:
+# 	print listToString(allDecks[key]['deck']), len(allDecks[key]['origin'])
+
+# actionData.to_csv('actionsData.csv')
+# buyData.to_csv('buysData.csv')
 # print buyData
-print actionData
+# print actionData
 
 # playoutTurn([copper,copper,copper,copper,copper,copper,copper,estate,estate,estate,smithy,lab])
 # playoutTurn([copper,copper,estate,estate,estate,estate,estate,estate,estate,monLen])
