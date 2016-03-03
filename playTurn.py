@@ -1,3 +1,4 @@
+from __future__ import division
 import C_card_classes
 import player_one_turn
 from random import shuffle
@@ -75,7 +76,7 @@ def ActionsToBuys(row):
 def return_action_cards(hand):
 	action_list = []
 	for card in hand:
-		if card.grouping == 'Action':
+		if card.isAction:
 			if (card is not monLen or copper in hand) and (((card is not remodel) and (card is not chapel)) or (len(hand) != 1)):
 				action_list.append(card)
 	return action_list
@@ -273,22 +274,64 @@ def getPossibleCombinations(cards, lower, upper=None):
 
 	return map(list, l)
 
-# for i in getPossibleCombinatons([copper,copper,copper,estate],1,5):
-# 	print listToString(i)
+def getPossibleCombinationsAndProb(cards, lower):
 
+	l = dict()
+	num = 0
+
+	for i in itertools.combinations(cards, lower):
+		num += 1
+
+		if i in l:
+			l[i] += 1
+		else:
+			l[i] = 1
+
+	print num
+	for i in l:
+		yield list(i), l[i]/num
+	# return map(list, l)
+
+# initialHand = [copper,copper,copper,copper,copper,copper,copper,estate,estate,estate]
+
+# for n,p in getPossibleCombinationsAndProb(initialHand,1):
+# 	print listToString(n), p
+
+def treasInHand(hand):
+	return reduce(lambda x,y: x+y.treasure, hand, 0)
 
 def playoutActions2(Ohand, Odeck, actions=1, buys=1,treasure=0):
 	if actions == 0:
 		return None
 
-	Oactions = return_action_cards(Ohand)
+	Oactions = set(return_action_cards(Ohand))
 
 	if not Oactions:
 		return None
 
+	data = []
+
+	for action in Oactions:
+		if action is None:
+			data.append({'taken':[], 'treasure':treasInHand(Ohand), 'buys':buys, 'acquire':[], 'actions':actions, 'startHand':Ohand, 'EndHand':Ohand, 'discarded':[], 'trash':[], 'deck':Odeck})
+		elif action.draw_cards > 0:
+			for k, p in getPossibleCombinationsAndProb(sorted(Odeck, lambda x: x.key), action.draw_cards):
+				deck = list(Odeck)
+				for i in k:
+					deck.remove(i)
+				playoutActions2((Ohand + k), deck, actions + action.gain_actions - 1, buys + action.gain_buys, treasure + action.gain_treasure)
+			pass
+		elif action is chapel:
+			pass
+		elif action is remodel:
+			pass
+		else:
+			playoutActions2(list(Ohand).remove(action), list(Odeck), actions + action.gain_actions - 1, buys + action.gain_buys, treasure + action.gain_treasure)
 
 
-# exit()
+
+
+exit()
 
 
 def incrementDest(myKey, key):
