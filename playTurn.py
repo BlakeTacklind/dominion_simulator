@@ -199,14 +199,6 @@ def playoutActions(Ohand, Odeck, rep=actRep):
 					trash = trash + [copper]
 					actionsTaken.append((choose,[copper]))
 					
-				elif choose is remodel:
-					remod = choice(hand)
-					acquire.append(remod.cost+2)
-					# actionsTaken.append("R - " + remod.name)
-					trash = trash + [remod]
-					hand.remove(remod)
-					actionsTaken.append((choose,[remod]))
-
 				elif choose.name is workshop:
 					acquire.append(4)
 					actionsTaken.append((choose,None))
@@ -216,6 +208,14 @@ def playoutActions(Ohand, Odeck, rep=actRep):
 					discard.remove(choose)
 					trash = trash + [choose]
 					actionsTaken.append((choose,None))
+
+				elif choose is remodel:
+					remod = choice(hand)
+					acquire.append(remod.cost+2)
+					# actionsTaken.append("R - " + remod.name)
+					trash = trash + [remod]
+					hand.remove(remod)
+					actionsTaken.append((choose,[remod]))
 
 				elif choose is chapel:
 					r = choice([1,2,3,4])
@@ -262,6 +262,34 @@ def playoutActions(Ohand, Odeck, rep=actRep):
 
 	return data
 
+def getPossibleCombinations(cards, lower, upper=None):
+	if upper is None:
+		upper = lower+1
+
+	l = set()
+	for j in range(lower,upper):
+		for i in itertools.combinations(cards, j):
+			l.add(i)
+
+	return map(list, l)
+
+# for i in getPossibleCombinatons([copper,copper,copper,estate],1,5):
+# 	print listToString(i)
+
+
+def playoutActions2(Ohand, Odeck, actions=1, buys=1,treasure=0):
+	if actions == 0:
+		return None
+
+	Oactions = return_action_cards(Ohand)
+
+	if not Oactions:
+		return None
+
+
+
+# exit()
+
 
 def incrementDest(myKey, key):
 	global allDecks
@@ -287,6 +315,9 @@ def playoutTurn(Odeck, rep=buyRep):
 	global buyColumns
 	actionDataTurn = pd.DataFrame(columns=actionColumns)
 	buyDataTurn = pd.DataFrame(columns=buyColumns)
+
+	global deckKeys
+	global stagedDecks
 
 	for i in range(rep):
 		deck = list(Odeck)
@@ -327,12 +358,14 @@ def playoutTurn(Odeck, rep=buyRep):
 					key = listToStortString(k)
 
 					incrementDest(myKey, key)
+						
 
 					if key not in allDecks:
 						if key in stagedDecks:
 							stagedDecks[key]['origin'].append(Odeck)
 						else:
 							stagedDecks[key]={'done':False, 'deck':k,'origin':[Odeck]}
+							deckKeys.append(key)
 							# print key
 					else:
 						allDecks[key]['origin'].append(Odeck)
@@ -345,12 +378,14 @@ def playoutTurn(Odeck, rep=buyRep):
 			for k in (sorted(deck + i, key= lambda c: c.key) for i in possibleBuys(Bdata[0]['treasure'])):
 				key = listToStortString(k)
 				incrementDest(myKey, key)
+					
 
 				if key not in allDecks:
 					if key in stagedDecks:
 						stagedDecks[key]['origin'].append(Odeck)
 					else:
 						stagedDecks[key]={'done':False, 'deck':k,'origin':[Odeck]}
+						deckKeys.append(key)
 				else:
 					allDecks[key]['origin'].append(Odeck)
 
@@ -366,11 +401,21 @@ def playoutTurn(Odeck, rep=buyRep):
 	with open('actionsData.csv', 'a') as f:
 		actionDataTurn.to_csv(f, header=False, index=False)
 
+	# global printed
+	# global printing
+	# if printing and printed > 0:
+	# 	printed -= 1
+	# 	print len(deckKeys), len(set(deckKeys))
+
+	with open('deckData.csv', 'a') as f:
+		pd.DataFrame(columns=deckKeys).append(pd.Series(allDecks[myKey]['dest'], name=myKey),0).to_csv(f, header=False)
+
 	del buyDataTurn
 	del actionDataTurn
 	# return buyDataTurn, actionDataTurn
 
-
+printed = 5
+printing = False
 # exit()
 
 actionColumns = ['taken', 'treasure', 'buys', 'acquire', 'actions', 'startHand', 'EndHand', 'discarded', 'trash', 'deck']
@@ -386,6 +431,8 @@ holder = pd.DataFrame(columns=buyColumns)
 with open('buysData.csv', 'w') as f:
 	holder.to_csv(f, index=False)
 
+open('deckData.csv', 'w').close()
+
 del holder
 
 # stagedDecks = dict()
@@ -397,8 +444,8 @@ del holder
 # for key in allDecks:
 # 	print listToString(allDecks[key]['deck'])
 # print possibleBuys(7, 2, 5)
-
 initialHand = [copper,copper,copper,copper,copper,copper,copper,estate,estate,estate]
+deckKeys = [listToStortString(initialHand)]
 
 allDecks = dict({listToStortString(initialHand):{'done':True, 'deck':initialHand,'origin':[], 'dest':dict()}})
 
@@ -421,7 +468,7 @@ for key in stagedDecks:
 print 'number of decks created:', len(stagedDecks)
 
 
-
+printing = True
 
 for i in range(numberMoreTurns):
 	print 'turn', str(i+4)," - Seconds:",time.time() - lastTime
@@ -442,18 +489,29 @@ for i in range(numberMoreTurns):
 print "Seconds:",time.time() - lastTime
 print "Generated",used,"more buys"
 
-x = 0
-y = 0
-for k in allDecks:
-	x += 1
-	if allDecks[k]['done']:
-		y += 1
-		dest = allDecks[k]['dest']
-		num = 0
-		num2 = 0
-		for k in dest:
-			num += dest[k]
-			num2 += 1
+decks = pd.DataFrame(columns=deckKeys)
+
+with open('deckData.csv', 'a') as f:
+	decks.to_csv(f)
+
+# decksColumns = ['key','origin','dest','done']
+# decks = pd.DataFrame(columns=decksColumns)
+
+# x = 0
+# y = 0
+
+# printed = False
+# for k in allDecks:
+# 	if allDecks[k]['done']:
+# 		if not printed:
+# 			printed = True
+# 			print pd.Series(allDecks[k]['dest'], name=k)
+# 		decks = decks.append(pd.Series(allDecks[k]['dest'], name=k),0)
+		# for k in dest:
+		# 	num += dest[k]
+		# 	num2 += 1
 		# print num,'across',num2,'-',k
 
-print x, y
+# print decks.shape
+# decks.to_csv('decksData.csv')
+# print x, y
