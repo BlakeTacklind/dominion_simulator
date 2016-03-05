@@ -205,7 +205,7 @@ def playoutActions(Ohand, Odeck, rep=actRep):
 					hand.remove(copper)
 					treasure+=3
 					trash = trash + [copper]
-					actionsTaken.append((choose,cardsToKeys([copper])))
+					actionsTaken.append((choose.key,cardsToKeys([copper])))
 					
 				elif choose.name is workshop:
 					acquire.append(4)
@@ -340,11 +340,7 @@ def playoutActions2(Ohand, Odeck, actions=1, buys=1,treasure=0):
 			playoutActions2(list(Ohand).remove(action), list(Odeck), actions + action.gain_actions - 1, 
 				buys + action.gain_buys, treasure + action.gain_treasure)
 
-
-
-
 # exit()
-
 
 def incrementDest(myKey, key):
 	global allDecks
@@ -507,8 +503,7 @@ deckKeys = [listToStortString(initialHand)]
 allDecks = dict({listToStortString(initialHand):{'done':True, 'deck':initialHand,'origin':[], 'dest':dict()}})
 
 
-
-print 'turn ', str(3)," - Seconds:",time.time() - lastTime
+print 'turn', str(3)," - Seconds:",time.time() - lastTime
 lastTime = time.time()
 
 Turn = 3
